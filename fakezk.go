@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ngaut/go-zookeeper/zk"
+	"github.com/go-cloud/go-zookeeper/zk"
 )
 
 type zconn struct {

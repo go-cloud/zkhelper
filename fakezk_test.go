@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ngaut/go-zookeeper/zk"
+	"github.com/go-cloud/go-zookeeper/zk"
 )
 
 // Make sure Stat implements the interface.
