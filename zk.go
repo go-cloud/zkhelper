@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/go-cloud/go-zookeeper/zk"
-	log "github.com/golang/glog"
+	"github.com/siddontang/go/log"
 )
 
 var (
@@ -461,13 +461,13 @@ func CreatePidNode(zconn Conn, zkPath string, contents string, done chan struct{
 				if ZkErrorEqual(err, zk.ErrNoNode) {
 					_, err = zconn.Create(zkPath, []byte(contents), zk.FlagEphemeral, zk.WorldACL(zk.PermAll))
 					if err != nil {
-						log.Warningf("failed recreating pid node: %v: %v", zkPath, err)
+						log.Warnf("failed recreating pid node: %v: %v", zkPath, err)
 					} else {
 						log.Infof("recreated pid node: %v", zkPath)
 						continue
 					}
 				} else {
-					log.Warningf("failed reading pid node: %v", err)
+					log.Warnf("failed reading pid node: %v", err)
 				}
 			} else {
 				select {
@@ -479,7 +479,7 @@ func CreatePidNode(zconn Conn, zkPath string, contents string, done chan struct{
 						// notification. This seems like buggy behavior, but rather
 						// than race too hard on the node, just wait a bit and see
 						// if the situation resolves itself.
-						log.Warningf("pid deleted: %v", zkPath)
+						log.Warnf("pid deleted: %v", zkPath)
 					} else {
 						log.Infof("pid node event: %v", event)
 					}
@@ -542,7 +542,7 @@ func (zm *zMutex) Interrupt() {
 	select {
 	case zm.interrupted <- struct{}{}:
 	default:
-		log.Warningf("zmutex interrupt blocked")
+		log.Warnf("zmutex interrupt blocked")
 	}
 }
 
@@ -631,7 +631,7 @@ trylock:
 		// underneath us, probably due to a session loss. We can
 		// recreate the lock node (with a new sequence number) and
 		// keep trying.
-		log.Warningf("zkutil: no lock node found: %v/%v", zm.path, zm.name)
+		log.Warnf("zkutil: no lock node found: %v/%v", zm.path, zm.name)
 		goto createlock
 	}
 
@@ -746,14 +746,14 @@ func (ze *ZElector) RunTask(task ElectorTask) error {
 		if err == nil || ZkErrorEqual(err, zk.ErrNodeExists) {
 			break
 		}
-		log.Warningf("election leader create failed: %v", err)
+		log.Warnf("election leader create failed: %v", err)
 		time.Sleep(delay.NextDelay())
 	}
 
 	for {
 		err := ze.Lock("RunTask")
 		if err != nil {
-			log.Warningf("election lock failed: %v", err)
+			log.Warnf("election lock failed: %v", err)
 			if err == ErrInterrupted {
 				return ErrInterrupted
 			}
@@ -764,7 +764,7 @@ func (ze *ZElector) RunTask(task ElectorTask) error {
 		// changes.
 		_, err = ze.zconn.Set(leaderPath, []byte(ze.contents), -1)
 		if err != nil {
-			log.Warningf("election promotion failed: %v", err)
+			log.Warnf("election promotion failed: %v", err)
 			continue
 		}
 
@@ -778,13 +778,13 @@ func (ze *ZElector) RunTask(task ElectorTask) error {
 		// Watch the leader so we can get notified if something goes wrong.
 		data, _, watch, err := ze.zconn.GetW(leaderPath)
 		if err != nil {
-			log.Warningf("election unable to watch leader node %v %v", leaderPath, err)
+			log.Warnf("election unable to watch leader node %v %v", leaderPath, err)
 			// FIXME(msolo) Add delay
 			goto watchLeader
 		}
 
 		if string(data) != ze.contents {
-			log.Warningf("election unable to promote leader")
+			log.Warnf("election unable to promote leader")
 			task.Stop()
 			// We won the election, but we didn't become the leader. How is that possible?
 			// (see Bush v. Gore for some inspiration)
@@ -800,7 +800,7 @@ func (ze *ZElector) RunTask(task ElectorTask) error {
 	waitForEvent:
 		select {
 		case <-ze.interrupted:
-			log.Warning("election interrupted - stop child process")
+			log.Warn("election interrupted - stop child process")
 			task.Stop()
 			// Once the process dies from the signal, this will all tear down.
 			goto waitForEvent
@@ -809,7 +809,7 @@ func (ze *ZElector) RunTask(task ElectorTask) error {
 			log.Infof("election child process ended: %v", taskErr)
 			ze.Unlock()
 			if task.Interrupted() {
-				log.Warningf("election child process interrupted - stepping down")
+				log.Warnf("election child process interrupted - stepping down")
 				return ErrInterrupted
 			}
 			continue
@@ -821,7 +821,7 @@ func (ze *ZElector) RunTask(task ElectorTask) error {
 			// election that we won't have won and the thus the lock was
 			// automatically freed. We have no choice but to start over.
 			if zevent.State == zk.StateExpired {
-				log.Warningf("election leader watch expired")
+				log.Warnf("election leader watch expired")
 				task.Stop()
 				continue
 			}
@@ -839,7 +839,7 @@ func (ze *ZElector) RunTask(task ElectorTask) error {
 			// On a leader node change, we need to perform the same
 			// validation. It's possible an election completes without the
 			// old leader realizing he is out of touch.
-			log.Warningf("election leader watch event %v", zevent)
+			log.Warnf("election leader watch event %v", zevent)
 			goto watchLeader
 		}
 	}
