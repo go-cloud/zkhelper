@@ -736,6 +736,13 @@ func CreateElection(zconn Conn, zkPath string) ZElector {
 	return ZElector{zMutex: zm, path: zkPath}
 }
 
+func CreateElectionWithContents(zconn Conn, zkPath string, contents string) ZElector {
+	zm := CreateMutex(zconn, path.Join(zkPath, "candidates")).(*zMutex)
+	zm.ephemeral = true
+	zm.contents = contents
+	return ZElector{zMutex: zm, path: zkPath}
+}
+
 // RunTask returns nil when the underlyingtask ends or the error it
 // generated.
 func (ze *ZElector) RunTask(task ElectorTask) error {
